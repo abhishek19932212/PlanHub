@@ -1,0 +1,43 @@
+Parameters:
+  InstanceType:
+    Type: String
+    Default: db.t3.small
+    AllowedValues:
+    - db.t3.micro
+    - db.t3.micro
+    - db.t3.small
+    - db.t3.medium
+    - db.t3.large
+Resources:
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: clone-SG4
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          CidrIp: 0.0.0.0/0
+          Description: For traffic from Internet
+      GroupDescription: Security Group for demo server
+      VpcId: vpc-afb094d7
+  DBCluster:
+    DeletionPolicy: Snapshot # default
+    UpdateReplacePolicy: Snapshot
+    Type: AWS::RDS::DBCluster
+    Properties:
+      RestoreType: copy-on-write
+      UseLatestRestorableTime: true   
+      SourceDBClusterIdentifier: test-2-cluster
+      DBClusterIdentifier: auroralab-mysql-clone-4
+      VpcSecurityGroupIds: 
+       - !Ref SecurityGroup
+  DBInstance:
+    Type: AWS::RDS::DBInstance
+    DependsOn: DBCluster
+    Properties:
+      DBClusterIdentifier: !Ref DBCluster
+      Engine: aurora-mysql
+      DBInstanceClass: !Ref InstanceType
+      DBInstanceIdentifier: auroralab-mysql-clone-instance-4
+      PubliclyAccessible: true
